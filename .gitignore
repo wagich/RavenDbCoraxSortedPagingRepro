@@ -1,0 +1,13 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+TestResults/
+
+# IDE
+.vs/
+.idea/
+*.user
+*.suo
+
+# RavenDB embedded server data
+RavenDB/
