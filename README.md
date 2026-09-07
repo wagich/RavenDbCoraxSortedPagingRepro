@@ -17,6 +17,12 @@ Four documents use ISO date strings, with `A` newest and `D` oldest:
 | C    | News     | `2026-07-01` |
 | D    | News     | `2026-06-01` |
 
+The ISO strings are intentional rather than an artificial simplification. The same failure occurs when `Date` is a `NodaTime.LocalDate` configured with `RavenDB.Client.NodaTime` 6.2.13. That integration serializes `LocalDate` in the same date-only ISO form. Keeping this reproduction on strings removes an unrelated dependency while preserving the failing indexed representation.
+
+The same experiment passes with `System.DateTime`, `System.DateOnly`, `NodaTime.Instant`, and `NodaTime.LocalDateTime`. Raven recognizes the date-time forms as `DateTime` values while executing the static map. Native `DateOnly` also has a dedicated indexing path. In both cases Raven writes numeric ticks, marks the index field as temporal, and uses Corax's numeric sorter. A serialized `LocalDate` remains a date-only string in this map, so it uses the affected textual `Sequence` sorter.
+
+Converting the string inside the static index also avoids the bug: `Date = AsDateOnly(item.Date)` passes every storage-order case while the document property and query remain string-typed. This is a viable workaround because the indexed field then uses the native `DateOnly` path and tick ordering.
+
 A Corax static index maps `Category` and `Date`. The query is:
 
 ```rql
